@@ -8,11 +8,8 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.util.Log;
-
 import androidx.annotation.Nullable;
 import androidx.collection.LongSparseArray;
-
 import com.airbnb.lottie.LottieComposition;
 import com.airbnb.lottie.LottieDrawable;
 import com.airbnb.lottie.LottieProperty;
@@ -494,7 +491,7 @@ public class TextLayer extends BaseLayer {
         reorderingStringBuilder.append(word);
       } else {
         reversingStringBuilder.setLength(0);
-        for (int j = 0; j < word.length();) {
+        for (int j = 0; j < word.length(); ) {
           String charString = codePointToString(word, j);
           reversingStringBuilder.insert(0, charString);
           j += charString.length();
@@ -590,8 +587,25 @@ public class TextLayer extends BaseLayer {
     if (!usingGlyphs) {
       for (int idx = 0; idx < lineCount; idx++) {
         TextSubLine subLine = textSubLines.get(idx);
-        int codePoints = subLine.text.codePointCount(0, subLine.text.length());
-        subLine.width = fillPaint.measureText(subLine.text) + codePoints * tracking;
+        float measured = fillPaint.measureText(subLine.text);
+
+        int drawnClusterCount = 0;
+        int k = 0;
+        while (k < subLine.text.length()) {
+          String cluster = codePointToString(subLine.text, k);
+          k += cluster.length();
+          while (k < subLine.text.length()) {
+            String next = codePointToString(subLine.text, k);
+            if (isJoiningRightToLeft(next)) {
+              k += next.length();
+            } else {
+              break;
+            }
+          }
+          drawnClusterCount++;
+        }
+
+        subLine.width = measured + drawnClusterCount * tracking;
       }
     }
 
